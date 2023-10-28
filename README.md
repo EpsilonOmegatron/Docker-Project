@@ -4,5 +4,5 @@ Phase 1 of 2023's RedHat project.
 + FrontEnd: Angular
 + BackEnd: Node JS
 + Database: MySQL
-## Phase Details
+## Phase Requirements
 [Adham Hazem - Project_Phase1.pdf](https://github.com/EpsilonOmegatron/Docker-Project-Phase-1/files/13195011/Adham.Hazem.-.Project_Phase1.pdf)
