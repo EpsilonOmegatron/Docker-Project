@@ -1,11 +1,31 @@
 const express = require("express");
-const app = express();
 const path = require("path");
-const db = require(path.join(__dirname, "models"));
-const dbConfig = require(path.join(__dirname, "config", "db-config.js"));
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-(async () => {
-  await db.sequelize.sync();
-})();
+//////// Root ////////
 
-app.listen(dbConfig.PORT);
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname + "/static/html/index.html"));
+});
+
+/////////////////////////////////////
+
+//////// Login-Signup routes ////////
+
+app.get("/login", (req, res) => {
+  res.sendFile(path.join(__dirname + "/static/html/login.html"));
+});
+
+app.get("/signup", (req, res) => {
+  res.sendFile(path.join(__dirname + "/static/html/signup.html"));
+});
+
+app.post("/signup", (req, res) => {
+  console.log(req.body);
+});
+
+/////////////////////////////////////
+
+app.listen(1234);
