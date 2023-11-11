@@ -1,9 +1,8 @@
 const express = require("express");
-const path = require("path");
 const mysql = require("mysql2");
 const session = require("express-session");
 const app = express();
-app.use(express.json()); // Parses body to json
+app.use(express.json()); // Parses request body to json
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: "secretstring" }));
 app.set("view engine", "ejs");
@@ -11,11 +10,11 @@ app.set("view engine", "ejs");
 //////// Database Setup + Initialization ////////
 
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "admin",
-  password: "1234",
+  host: "localhost", // Configure Host here
+  user: "admin", // Configure your MySQL username here
+  password: "1234", // Configure your MySQL password here
 });
-const appPort = 1234;
+const appPort = 1234; // The port the application will be running on
 
 db.query("CREATE DATABASE clinicapp", (err) => {
   if (err) {
@@ -31,7 +30,7 @@ db.query(
   `CREATE TABLE user
   (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, 
-    username VARCHAR(255) NOT NULL unique, 
+    username VARCHAR(255) NOT NULL UNIQUE, 
     password VARCHAR(255) NOT NULL, 
     role VARCHAR(50) NOT NULL
   )`,
@@ -49,7 +48,7 @@ db.query(
   (
     id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     patientID INT NOT NULL UNIQUE REFERENCES user(id),
-    slotID INT NOT NULL UNIQUE REFERENCES slot(id)
+    slotID INT NOT NULL UNIQUE REFERENCES doctorslot(id)
   )`,
   (err) => {
     if (err) {
@@ -64,8 +63,10 @@ db.query(
   `CREATE TABLE doctorslot
   (
     id int NOT NULL AUTO_INCREMENT PRIMARY KEY, 
-    doctorID INT NOT NULL UNIQUE REFERENCES user(id), 
-    date DATETIME NOT NULL
+    doctorID INT NOT NULL REFERENCES user(id),
+    doctorName VARCHAR(255) NOT NULL, 
+    date DATE NOT NULL,
+    time TIME NOT NULL
   )`,
   (err) => {
     if (err) {
@@ -110,6 +111,7 @@ app.post("/auth", (req, res) => {
       if (err) throw err;
       if (result.length > 0) {
         req.session.loggedIn = true;
+        req.session.unique = result[0].id;
         req.session.username = username;
         req.session.role = result[0].role;
         res.redirect(`/user/${req.session.username}`);
@@ -160,9 +162,56 @@ app.get("/logout", (req, res) => {
 
 app.get(`/user/:username`, (req, res) => {
   if (req.session.role == "Doctor") {
-    res.sendFile(path.join(__dirname + "/static/html/doctor.html"));
+    db.query(
+      `SELECT id, DATE_FORMAT(date, '%Y/%m/%e') AS date, TIME_FORMAT(time, '%r') AS time FROM doctorslot WHERE doctorID = ${req.session.unique}`,
+      (err, result) => {
+        const queryResults = result;
+        res.render("pages/doctor", {
+          username: req.session.username,
+          results: queryResults,
+        });
+      }
+    );
   } else if (req.session.role == "Patient") {
-    res.sendFile(path.join(__dirname + "/static/html/patient.html"));
+    res.render("pages/patient", { username: req.session.username });
+  } else {
+    res.redirect("/");
+  }
+});
+
+app.get("/user/delete/:id", (req, res) => {
+  if (req.session.role == "Doctor") {
+    db.query(
+      `DELETE FROM doctorslot WHERE doctorslot.id = ${req.params.id}`,
+      (err, result) => {
+        if (err) {
+          res.send(err);
+        } else {
+          res.redirect("/user/:username");
+        }
+      }
+    );
+  } else if (req.session.role == "Patient") {
+    res.render("pages/patient", { username: req.session.username });
+  } else {
+    res.redirect("/");
+  }
+});
+
+app.post(`/user/:username`, (req, res) => {
+  if (req.session.role == "Doctor") {
+    db.query(
+      `INSERT INTO doctorslot (doctorID, doctorName, date, time) VALUES (${req.session.unique}, "${req.session.username}", "${req.body.date}", "${req.body.time}")`,
+      (err, result) => {
+        if (err) {
+          res.send(err);
+        } else {
+          res.redirect(`/user/:username`);
+        }
+      }
+    );
+  } else if (req.session.role == "Patient") {
+    res.render("pages/patient", { username: req.session.username });
   } else {
     res.redirect("/");
   }
