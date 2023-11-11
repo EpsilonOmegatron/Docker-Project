@@ -25,16 +25,15 @@
   >
     <label style="font-size: xx-large">Welcome, <%= username %>!</label>
     <a href="/logout" style="font-size: small">Logout</a><br /><br />
-    <label style="font-size: large">Your appointments:</label>
-    <table style="border-collapse: collapse; width: 100%">
-    </table>
-    <br /><br />
-    <form style="text-align: center;" action="/user" method="post">
-      <label for="date">Date:</label>
-      <input type="date" id="date" name="date" /><br /><br />
-      <label for="time">Time:</label>
-      <input type="time" id="time" name="time" /><br /><br/>
-      <button type="submit" style="width: 50%;">Add Slot</button>
+    <form style="text-align: center" action="/user/<%= username %>" method="post">
+      <label>Select Doctor:</label>
+      <select name="doctors">
+        <% results.forEach(function(result) { %>
+        <option value="<%= result.doctorName %>"><%= result.doctorName %></option>
+        <% }); %>
+      </select>
+      <br /><br />
+      <button type="submit" style="width: 50%">Get Slots</button>
     </form>
   </body>
 </html>

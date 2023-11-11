@@ -173,6 +173,31 @@ app.get(`/user/:username`, (req, res) => {
       }
     );
   } else if (req.session.role == "Patient") {
+    db.query(`SELECT DISTINCT doctorName from doctorslot`, (err, result) => {
+      const queryResults = result;
+      res.render("pages/patient", {
+        username: req.session.username,
+        results: queryResults,
+      });
+    });
+  } else {
+    res.redirect("/");
+  }
+});
+
+app.post(`/user/:username`, (req, res) => {
+  if (req.session.role == "Doctor") {
+    db.query(
+      `INSERT INTO doctorslot (doctorID, doctorName, date, time) VALUES (${req.session.unique}, "${req.session.username}", "${req.body.date}", "${req.body.time}")`,
+      (err, result) => {
+        if (err) {
+          res.send(err);
+        } else {
+          res.redirect(`/user/:username`);
+        }
+      }
+    );
+  } else if (req.session.role == "Patient") {
     res.render("pages/patient", { username: req.session.username });
   } else {
     res.redirect("/");
@@ -188,25 +213,6 @@ app.get("/user/delete/:id", (req, res) => {
           res.send(err);
         } else {
           res.redirect("/user/:username");
-        }
-      }
-    );
-  } else if (req.session.role == "Patient") {
-    res.render("pages/patient", { username: req.session.username });
-  } else {
-    res.redirect("/");
-  }
-});
-
-app.post(`/user/:username`, (req, res) => {
-  if (req.session.role == "Doctor") {
-    db.query(
-      `INSERT INTO doctorslot (doctorID, doctorName, date, time) VALUES (${req.session.unique}, "${req.session.username}", "${req.body.date}", "${req.body.time}")`,
-      (err, result) => {
-        if (err) {
-          res.send(err);
-        } else {
-          res.redirect(`/user/:username`);
         }
       }
     );
