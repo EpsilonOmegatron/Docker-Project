@@ -6,6 +6,7 @@ const app = express();
 app.use(express.json()); // Parses body to json
 app.use(express.urlencoded({ extended: true }));
 app.use(session({ secret: "secretstring" }));
+app.set("view engine", "ejs");
 
 //////// Database Setup + Initialization ////////
 
@@ -80,10 +81,10 @@ db.query(
 //////// Root ////////
 
 app.get("/", (req, res) => {
-  if (req.session.username) {
-    res.redirect("/home");
+  if (req.session.loggedIn) {
+    res.redirect(`/user/${req.session.username}`);
   } else {
-    res.sendFile(path.join(__dirname + "/static/html/index.html"));
+    res.render("pages/index");
   }
 });
 
@@ -92,7 +93,11 @@ app.get("/", (req, res) => {
 //////// Login-Signup-Logout routes ////////
 
 app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname + "/static/html/login.html"));
+  if (req.session.loggedIn) {
+    res.redirect(`/user/${req.session.username}`);
+  } else {
+    res.render("pages/login");
+  }
 });
 
 app.post("/auth", (req, res) => {
@@ -107,7 +112,7 @@ app.post("/auth", (req, res) => {
         req.session.loggedIn = true;
         req.session.username = username;
         req.session.role = result[0].role;
-        res.redirect(`/home/${username}`);
+        res.redirect(`/user/${req.session.username}`);
       } else {
         res.send(
           `Incorrect Username and/or Password. <a href="/">Return to homepage.</a>`
@@ -118,7 +123,11 @@ app.post("/auth", (req, res) => {
 });
 
 app.get("/signup", (req, res) => {
-  res.sendFile(path.join(__dirname + "/static/html/signup.html"));
+  if (req.session.loggedIn) {
+    res.redirect(`/user/${req.session.username}`);
+  } else {
+    res.render("pages/signup");
+  }
 });
 
 app.post("/signup", (req, res) => {
@@ -127,21 +136,36 @@ app.post("/signup", (req, res) => {
      VALUES("${req.body.username}", "${req.body.password}", "${req.body.role}")`,
     (err) => {
       if (err) {
-        res.redirect(409, "/signup");
+        res.redirect("/signup");
       } else {
         res.status(200);
-        res.send("Signup success!");
+        res.redirect("/");
       }
     }
   );
 });
 
 app.get("/logout", (req, res) => {
-  if (req.session.username) {
+  if (req.session.loggedIn) {
     req.session.destroy();
-    res.send("logout success!");
+    res.redirect("/");
+  } else {
+    res.redirect("/");
   }
-  res.redirect("/");
+});
+
+/////////////////////////////////////
+
+//////// User - Logic Routes ////////
+
+app.get(`/user/:username`, (req, res) => {
+  if (req.session.role == "Doctor") {
+    res.sendFile(path.join(__dirname + "/static/html/doctor.html"));
+  } else if (req.session.role == "Patient") {
+    res.sendFile(path.join(__dirname + "/static/html/patient.html"));
+  } else {
+    res.redirect("/");
+  }
 });
 
 /////////////////////////////////////
