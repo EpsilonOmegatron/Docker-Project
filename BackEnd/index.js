@@ -219,19 +219,16 @@ app.get("/user/delete/:id", (req, res) => {
       (err, result) => {
         if (err) {
           res.send(err);
-        } 
-      }
-    );
-    db.query(
-      `DELETE FROM slot WHERE id = ${req.params.id}`,
-      (err, result) => {
-        if (err) {
-          res.send(err);
-        } else {
-          res.redirect("/user/:username/reservations");
         }
       }
     );
+    db.query(`DELETE FROM slot WHERE id = ${req.params.id}`, (err, result) => {
+      if (err) {
+        res.send(err);
+      } else {
+        res.redirect("/user/:username/reservations");
+      }
+    });
   } else {
     res.redirect("/");
   }
@@ -244,9 +241,46 @@ app.get(`/user/:username/add`, (req, res) => {
       const queryResults = result;
       res.render("pages/patientAddSlot", {
         username: req.session.username,
-        results: queryResults,
+        doctors: queryResults,
+        results: [],
       });
     });
+  } else {
+    res.redirect("/");
+  }
+});
+
+app.post(`/user/:username/add`, (req, res) => {
+  if (req.session.role == "Patient") {
+    var doctorResult;
+    db.query(`SELECT DISTINCT doctorName from doctorslot`, (err, result) => {
+      doctorResult = result;
+    });
+    db.query(
+      `SELECT id, DATE_FORMAT(date, '%Y/%m/%e') AS date, TIME_FORMAT(time, '%r') AS time FROM doctorslot WHERE doctorName = "${req.body.doctors}"`,
+      (err, result) => {
+        res.render("pages/patientAddSlot", {
+          username: req.session.username,
+          doctors: doctorResult,
+          results: result,
+        });
+      }
+    );
+  }
+});
+
+app.get(`/user/add/:id`, (req, res) => {
+  if (req.session.role == "Patient") {
+    db.query(
+      `INSERT INTO slot (patientID, slotID) values (${req.session.unique}, ${req.params.id})`,
+      (err, result) => {
+        if (err) {
+          res.send(err);
+        } else {
+          res.redirect("/user/:username/reservations");
+        }
+      }
+    );
   } else {
     res.redirect("/");
   }
