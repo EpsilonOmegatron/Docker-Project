@@ -47,7 +47,7 @@ db.query(
   `CREATE TABLE slot
   (
     id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    patientID INT NOT NULL UNIQUE REFERENCES user(id),
+    patientID INT NOT NULL REFERENCES user(id),
     slotID INT NOT NULL UNIQUE REFERENCES doctorslot(id)
   )`,
   (err) => {
@@ -160,6 +160,7 @@ app.get("/logout", (req, res) => {
 
 //////// User - Logic Routes ////////
 
+// User Main Page
 app.get(`/user/:username`, (req, res) => {
   if (req.session.role == "Doctor") {
     db.query(
@@ -173,18 +174,15 @@ app.get(`/user/:username`, (req, res) => {
       }
     );
   } else if (req.session.role == "Patient") {
-    db.query(`SELECT DISTINCT doctorName from doctorslot`, (err, result) => {
-      const queryResults = result;
-      res.render("pages/patient", {
-        username: req.session.username,
-        results: queryResults,
-      });
+    res.render("pages/patient", {
+      username: req.session.username,
     });
   } else {
     res.redirect("/");
   }
 });
 
+// Doctor Insert Slot
 app.post(`/user/:username`, (req, res) => {
   if (req.session.role == "Doctor") {
     db.query(
@@ -197,13 +195,12 @@ app.post(`/user/:username`, (req, res) => {
         }
       }
     );
-  } else if (req.session.role == "Patient") {
-    res.render("pages/patient", { username: req.session.username });
   } else {
     res.redirect("/");
   }
 });
 
+// User Delete Slot
 app.get("/user/delete/:id", (req, res) => {
   if (req.session.role == "Doctor") {
     db.query(
@@ -217,7 +214,57 @@ app.get("/user/delete/:id", (req, res) => {
       }
     );
   } else if (req.session.role == "Patient") {
-    res.render("pages/patient", { username: req.session.username });
+    db.query(
+      `DELETE FROM doctorslot WHERE id = ${req.params.id}`,
+      (err, result) => {
+        if (err) {
+          res.send(err);
+        } 
+      }
+    );
+    db.query(
+      `DELETE FROM slot WHERE id = ${req.params.id}`,
+      (err, result) => {
+        if (err) {
+          res.send(err);
+        } else {
+          res.redirect("/user/:username/reservations");
+        }
+      }
+    );
+  } else {
+    res.redirect("/");
+  }
+});
+
+// Patient Add Slot
+app.get(`/user/:username/add`, (req, res) => {
+  if (req.session.role == "Patient") {
+    db.query(`SELECT DISTINCT doctorName from doctorslot`, (err, result) => {
+      const queryResults = result;
+      res.render("pages/patientAddSlot", {
+        username: req.session.username,
+        results: queryResults,
+      });
+    });
+  } else {
+    res.redirect("/");
+  }
+});
+
+// Patient Show Reservations
+app.get(`/user/:username/reservations`, (req, res) => {
+  if (req.session.role == "Patient") {
+    db.query(
+      `SELECT DISTINCT doctorslot.id AS id, DATE_FORMAT(date, '%Y/%m/%e') AS date, TIME_FORMAT(time, '%r') AS time, doctorName FROM doctorslot, slot, user WHERE doctorslot.id = slot.slotID AND slot.patientID = ${req.session.unique}`,
+      (err, result) => {
+        const queryResults = result;
+        res.render("pages/patientReservations", {
+          username: req.session.username,
+          results: queryResults,
+        });
+      }
+    );
   } else {
     res.redirect("/");
   }
@@ -232,3 +279,4 @@ app.listen(appPort, () => {
 });
 
 /////////////////////////////////////
+// `SELECT id, DATE_FORMAT(date, '%Y/%m/%e') AS date, TIME_FORMAT(time, '%r') AS time FROM doctorslot WHERE doctorName = ${req.body.doctors}`
