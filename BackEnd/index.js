@@ -10,8 +10,8 @@ app.set("view engine", "ejs");
 //////// Database Setup + Initialization ////////
 
 const db = mysql.createConnection({
-  host: "localhost", // Configure Host here
-  user: "admin", // Configure your MySQL username here
+  host: "mysql", // Configure Host here
+  user: "root", // Configure your MySQL username here
   password: "1234", // Configure your MySQL password here
 });
 const appPort = 1234; // The port the application will be running on
