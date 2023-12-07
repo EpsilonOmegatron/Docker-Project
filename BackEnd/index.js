@@ -11,11 +11,12 @@ app.set("view engine", "ejs");
 //////// Database Setup + Initialization ////////
 
 const db = mysql.createConnection({
-  host: "mysql", // Configure Host here
-  user: "root", // Configure your MySQL username here
-  password: "1234", // Configure your MySQL password here
+  host: process.env.DB_HOST || "localhost", // Configure Host here
+  user: process.env.DB_USER || "admin", // Configure your MySQL username here
+  password: process.env.DB_PASSWORD || "1234", // Configure your MySQL password here
+  port: process.env.DB_PORT || "3306", //Configure your MySQL port here
 });
-const appPort = 1234; // The port the application will be running on
+const appPort = process.env.APP_PORT || 1234; // The port the application will be running on
 
 db.query("CREATE DATABASE clinicapp", (err) => {
   if (err) {
