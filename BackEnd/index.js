@@ -16,6 +16,7 @@ const db = mysql.createConnection({
   password: process.env.DB_PASSWORD || "1234", // Configure your MySQL password here
   port: process.env.DB_PORT || "3306", //Configure your MySQL port here
 });
+const appAddress = process.env.APP_ADDRESS || "127.0.0.1"
 const appPort = process.env.APP_PORT || 1234; // The port the application will be running on
 
 db.query("CREATE DATABASE clinicapp", (err) => {
@@ -310,8 +311,8 @@ app.get(`/user/:username/reservations`, (req, res) => {
 
 //////// Begin App ////////
 
-app.listen(appPort, () => {
-  console.log(`Listening on ${appPort}`);
+app.listen(appPort, appAddress, () => {
+  console.log(`Listening on ${appPort} at ${appAddress}`);
 });
 
 /////////////////////////////////////
